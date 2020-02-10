@@ -26,7 +26,6 @@
         computed: {
             isFavorite() {
                 return this.favorited;
-                return this.favorited_s;
             },
         },
 

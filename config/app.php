@@ -163,6 +163,7 @@ return [
         Illuminate\View\ViewServiceProvider::class,
 
         App\Providers\YouTubeServiceProvider::class,
+        App\Providers\RepositoryServiceProvider::class,
 
 
         /*

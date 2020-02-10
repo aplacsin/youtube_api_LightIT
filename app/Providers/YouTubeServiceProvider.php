@@ -23,9 +23,7 @@ class YoutubeServiceProvider extends ServiceProvider
    * @return void
    */
   public function register()
-  {
-    $app = $this->app;
-
+  { 
     $this->app->bind('GoogleClient', function () {
         $googleClient = new \Google_Client();
         $googleClient->setDeveloperKey(config('google.api_key'));
@@ -33,7 +31,7 @@ class YoutubeServiceProvider extends ServiceProvider
         return $googleClient;
     });
 
-    $this->app->bind('youtube', function () use ($app) {      
+    $this->app->bind('youtube', function () {      
         $googleClient = \App::make('GoogleClient');
         $youtube = new \Google_Service_YouTube($googleClient);
 

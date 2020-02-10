@@ -5,11 +5,20 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use DateTime;
 use App\Videos;
+use App\Repositories\Interfaces\VideoRepositoryInterface;
 
 class YoutubePlayerController extends Controller
 {
+
+    private $videoRepository;    
+
+    public function __construct(VideoRepositoryInterface $videoRepository)
+    {
+        $this->videoRepository = $videoRepository;
+    }
+
+
     /* Main Page */
     public function index()
     { 
@@ -21,8 +30,10 @@ class YoutubePlayerController extends Controller
     /* Search Videos */
     public function search(Request $request)
     {
+        $max = 12;
+        
         $options = [
-            'maxResults' => 12,
+            'maxResults' => $max,
             'q' => $request->input('query'),
             'type' => 'video'
         ];
@@ -34,27 +45,32 @@ class YoutubePlayerController extends Controller
         $youtube = \App::make('youtube');
         $videos = $youtube->search->listSearch("snippet", $options);
 
-        
-        /* DATABASE */		
-        $data = [];        
-        foreach ($videos as $video) {
+        try {
+            /* DATABASE */		
+            $data = [];        
+            foreach ($videos as $video) {
             
-            $data[] = [ 
-                'query' => $request->input('query'),              
-                'video_id' => ($video['id']['videoId']),
-				'videos_id' => ('b' . $video['id']['videoId']),
-                'title' => $video['snippet']['title'],                
-                'image' => $video['snippet']['thumbnails']['medium']['url'],
-                'published' => $video['snippet']['publishedAt']
-            ];           
+                $data[] = [ 
+                    'query' => $request->input('query'),              
+                    'video_id' => ($video['id']['videoId']),
+				    'videos_id' => ('b' . $video['id']['videoId']),
+                    'title' => $video['snippet']['title'],                
+                    'image' => $video['snippet']['thumbnails']['medium']['url'],
+                    'published' => $video['snippet']['publishedAt']
+                ];           
             
+            }
+        } 
+        catch (\Exception $e)
+        {            
+            return $e;
         }
 
         $videosdb = new Videos();
         $videosdb->insert($data);        
-        $videosdb->save();		
-		
-		$bdsearch = Videos::where('query', $request->input('query'))->orderBy('id', 'desc')->limit(12)->get();
+        $videosdb->save();	
+        
+        $bdsearch = $this->videoRepository->getVideos($request);		
 
         // after video ends, use relatedToVideoId for suggestions
         return view("youtube.search", compact('bdsearch'), ['videos' => $videos, 'query' => $request->input('query')]);
@@ -66,10 +82,10 @@ class YoutubePlayerController extends Controller
 
     /* Likes Video */
     public function favoriteVideo(Request $video_id)
-    {   
-		Auth::user()->favorites()->attach('b' . $video_id->video_id);
+    {		
         $vid = $video_id->video_id;
-        $user = Videos::where('video_id', $vid)->first();
+        $user = $this->videoRepository->favoritedVideos($video_id);
+        Auth::user()->favorites()->attach('b' . $vid);
         Auth::user()->favorites()->attach($user->id);
         return back();
     }
@@ -79,11 +95,12 @@ class YoutubePlayerController extends Controller
 
     /* Remove Likes Video */
     public function unFavoriteVideo(Request $video_id)
-    {	
-		Auth::user()->favorites()->detach('b' . $video_id->video_id);
+    {			
         $vid = $video_id->video_id;
-        $user = Videos::where('video_id', $vid)->first();
+        $user = $this->videoRepository->favoritedVideos($video_id);
+        Auth::user()->favorites()->detach('b' . $vid);
         Auth::user()->favorites()->detach($user->id);		
         return back();
     }
+
 }

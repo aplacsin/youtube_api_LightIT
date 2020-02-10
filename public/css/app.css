@@ -11466,7 +11466,7 @@ body {
 }
 
 .title-video {
-  font-size: 12px;
+  font-size: 13px;
 }
 
 @media (max-width: 575px) {
@@ -11491,7 +11491,7 @@ body {
 }
 
 .published-video {
-  font-size: 11px;
+  font-size: 12px;
   margin-bottom: 5px;
   margin-left: 5px;
   margin-right: 5px;
